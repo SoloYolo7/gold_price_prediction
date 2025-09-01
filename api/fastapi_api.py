@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 mlflow.set_tracking_uri("http://84.201.144.227:8000")
-XGBOOST_RUN_ID = "439c6ad7b4004723beb29f78bed50465"
-MODEL_URI = f"runs:/{XGBOOST_RUN_ID}/model"
+RUN_ID = "94ae8c757e82422c82f11493c3644ab3"
+MODEL_URI = f"runs:/{RUN_ID}/model_pipeline"
 
 try:
     ml_model = mlflow.pyfunc.load_model(MODEL_URI)

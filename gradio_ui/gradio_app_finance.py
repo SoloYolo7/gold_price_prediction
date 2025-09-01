@@ -7,7 +7,7 @@ import requests
 from datetime import datetime
 
 # Адрес API берём из окружения. По умолчанию — имя сервиса в k8s.
-API_URL = os.getenv("API_URL", "http://api-gold-price-prediction/predict")
+API_URL = os.getenv("API_URL", "/api-gold-price-prediction/predict")
 REQUEST_TIMEOUT = float(os.getenv("REQUEST_TIMEOUT", "60"))
 
 def _pretty_http_error(resp: requests.Response) -> str:
