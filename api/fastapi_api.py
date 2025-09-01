@@ -11,7 +11,7 @@ from contextlib import asynccontextmanager
 # --- 1. НАСТРОЙКИ ---
 load_dotenv()
 mlflow.set_tracking_uri("http://84.201.144.227:8000")
-XGBOOST_RUN_ID = "d5914725ff554bdb8a1a8021f1c56a3b" # Убедитесь, что RUN_ID верный
+XGBOOST_RUN_ID = "82d0a09af0d144f3bdc3f7111ea5b099"
 MODEL_URI = f"runs:/{XGBOOST_RUN_ID}/model_pipeline"
 
 # Глобальный словарь для хранения модели
