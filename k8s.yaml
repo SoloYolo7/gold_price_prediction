@@ -42,6 +42,7 @@ metadata:
 spec:
   selector:
     app: api-__PROJECT_NAME__
+  type: NodePort
   ports:
     - name: http
       port: 80
@@ -88,6 +89,7 @@ metadata:
 spec:
   selector:
     app: ui-__PROJECT_NAME__
+  type: NodePort
   ports:
     - name: http
       port: 80
