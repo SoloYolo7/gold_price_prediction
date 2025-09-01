@@ -1,5 +1,4 @@
 ---
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,7 +12,6 @@ spec:
     metadata:
       labels:
         app: api-__PROJECT_NAME__
-        version: v1
     spec:
       containers:
         - name: api-__PROJECT_NAME__
@@ -27,7 +25,6 @@ spec:
               value: "__AWS_SECRET_ACCESS_KEY__"
             - name: MLFLOW_S3_ENDPOINT_URL
               value: "__MLFLOW_S3_ENDPOINT_URL__"
-            # (опционально, но полезно для Object Storage)
             - name: AWS_DEFAULT_REGION
               value: "ru-central1"
           resources:
@@ -45,21 +42,15 @@ metadata:
 spec:
   selector:
     app: api-__PROJECT_NAME__
-  type: NodePort
   ports:
     - name: http
-      port: 80 # port for external access to the service
+      port: 80
       targetPort: 8000
-      # protocol: TCP
-      # nodePort: 30800 # The range of valid ports is 30000-32767
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ui-__PROJECT_NAME__
-  labels:
-    app: ui-__PROJECT_NAME__
-    version: v1
 spec:
   replicas: 1
   selector:
@@ -69,7 +60,6 @@ spec:
     metadata:
       labels:
         app: ui-__PROJECT_NAME__
-        version: v1
     spec:
       containers:
         - name: ui-__PROJECT_NAME__
@@ -78,7 +68,6 @@ spec:
             - containerPort: 7860
           env:
             - name: API_URL
-              # ВАЖНО: к сервису ходим по порту 80, не 8000
               value: "http://api-__PROJECT_NAME__/predict"
             - name: ROOT_PATH
               value: "/ui-__PROJECT_NAME__"
@@ -91,117 +80,44 @@ spec:
             requests:
               cpu: 0.5
               memory: 1Gi
-          # (необязательно, но полезно)
-          readinessProbe:
-            httpGet:
-              path: /ui-__PROJECT_NAME__/
-              port: 7860
-            initialDelaySeconds: 10
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /ui-__PROJECT_NAME__/
-              port: 7860
-            initialDelaySeconds: 20
-            periodSeconds: 20
-
 ---
-apiVersion: v1 # specifies the API version for the Service resource
+apiVersion: v1
 kind: Service
 metadata:
   name: ui-__PROJECT_NAME__
 spec:
   selector:
     app: ui-__PROJECT_NAME__
-  type: NodePort
   ports:
     - name: http
-      port: 80 # port for external access to the service
+      port: 80
       targetPort: 7860
-      # protocol: TCP
-      # nodePort: 30850 # The range of valid ports is 30000-32767
-
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: api-__PROJECT_NAME__
-data:
-  nginx.conf: |
-    worker_processes auto;
-    events {
-    }
-    http {
-      server {
-        listen 80 ;
-        location = /api-__PROJECT_NAME__ {
-          proxy_pass http://api-__PROJECT_NAME__;
-          proxy_set_header Host $host;
-          proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        }
-      }
-    }
-
-
-
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: ui-__PROJECT_NAME__
-data:
-  nginx.conf: |
-    worker_processes auto;
-    events {
-      worker_connections 1024;
-    }
-    http {
-      include       mime.types;
-      default_type  application/octet-stream;
-      sendfile        on;
-      keepalive_timeout  65;
-      server {
-        listen 80;
-        server_name __DOMAIN_NAME__ www.__DOMAIN_NAME__;
-        location /ui-__PROJECT_NAME__ {
-          proxy_pass http://ui-__PROJECT_NAME__;
-          proxy_http_version 1.1;
-          proxy_set_header Upgrade $http_upgrade;
-          proxy_set_header Connection "upgrade";
-          proxy_set_header Host $host;
-          proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-          proxy_set_header X-Forwarded-Proto $scheme;
-        }
-      }
-    }
-
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: alb-__PROJECT_NAME__
+  name: alb-__PROJECT_NAME__ 
   annotations:
-    kubernetes.io/ingress.class: yc-alb-ingress
+    # --- ЭТО КОНФИГУРАЦИЯ ДЛЯ YANDEX CLOUD ALB ---
     ingress.alb.yc.io/subnets: __ALB_INGRESS_SUBNET__
     ingress.alb.yc.io/security-groups: __ALB_INGRESS_SEC_GROUP__
     ingress.alb.yc.io/external-ipv4-address: __ALB_INGRESS_EXT_IP__
     ingress.alb.yc.io/group-name: __PROJECT_NAME__-ingress-group
-    nginx.ingress.kubernetes.io/proxy-body-size: "0"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+
+    # --- ЭТО ИСПРАВЛЕНИЕ: ДОБАВЛЯЕМ ПРАВИЛЬНЫЕ ТАЙМАУТЫ ДЛЯ ALB ---
+    ingress.alb.yc.io/requests-timeout: "300s"
+    ingress.alb.yc.io/connect-timeout: "30s"
+
 spec:
   tls:
     - hosts:
-        - __DOMAIN_NAME__ # Domain name for which the certificate is issued
-      secretName: yc-certmgr-cert-id-__TLS_ID__ # Secret ID in Certificate Manager
+        - __DOMAIN_NAME__
+      secretName: yc-certmgr-cert-id-__TLS_ID__
   rules:
     - host: __DOMAIN_NAME__
       http:
         paths:
-          - path: /api-__PROJECT_NAME__ # path to the service, get from  location
+          - path: /api-__PROJECT_NAME__
             pathType: Prefix
             backend:
               service:
@@ -215,4 +131,3 @@ spec:
                 name: ui-__PROJECT_NAME__
                 port:
                   number: 80
-

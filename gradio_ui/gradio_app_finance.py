@@ -7,8 +7,9 @@ import requests
 from datetime import datetime
 
 # Адрес API берём из окружения. По умолчанию — имя сервиса в k8s.
-API_URL = os.getenv("API_URL", "/api-gold-price-prediction/predict")
-REQUEST_TIMEOUT = float(os.getenv("REQUEST_TIMEOUT", "60"))
+API_URL = os.getenv("API_URL", "http://api-gold-price-prediction/predict")
+# Устанавливаем таймаут по умолчанию в 60 секунд
+REQUEST_TIMEOUT = float(os.getenv("REQUEST_TIMEOUT", "60")) 
 
 def _pretty_http_error(resp: requests.Response) -> str:
     """
@@ -34,7 +35,9 @@ def predict_gold_price(uploaded_file):
     try:
         with open(uploaded_file.name, "rb") as f:
             files = {"file": (os.path.basename(uploaded_file.name), f, "text/csv")}
-            resp = requests.post(API_URL, files=files, timeout=REQUEST_TIMEOUT)
+            # ЯВНО УКАЗЫВАЕМ ТАЙМАУТ В ЗАПРОСЕ
+            resp = requests.post(API_URL, files=files, timeout=REQUEST_TIMEOUT) 
+
         # если код не 2xx — кинет HTTPError
         resp.raise_for_status()
         data = resp.json()
