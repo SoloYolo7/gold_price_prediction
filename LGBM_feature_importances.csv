@@ -1,0 +1,316 @@
+feature,importance
+gold low,3132
+gold high,2625
+silver high-low,1674
+gold volume,1557
+platinum high-low,1504
+silver volume,1167
+silver high-low_roll_mean3,830
+platinum volume_lag1,774
+palladium high-low,747
+silver volume_lag1,741
+gold volume_lag1,739
+sp500 volume_roll_mean3,734
+gold volume_roll_mean3,734
+platinum high-low_roll_mean3,710
+platinum volume_lag5,667
+silver high-low_lag2,644
+platinum volume_lag2,640
+platinum volume,638
+platinum high-low_lag1,638
+silver high-low_lag1,625
+oil high-low,623
+palladium volume,606
+sp500 high-low,606
+silver volume_lag5,598
+gold volume_lag5,596
+palladium high-low_lag5,576
+silver volume_roll_mean3,574
+sp500 volume,573
+platinum high-low_lag5,568
+silver volume_lag2,567
+oil high-low_lag2,561
+gold volume_lag2,547
+platinum volume_roll_mean3,535
+platinum high-low_lag2,533
+oil high-low_lag1,531
+nasdaq volume_lag2,531
+silver volume_roll_mean7,527
+sp500 high-low_lag5,523
+palladium volume_lag5,523
+silver high-low_lag5,522
+silver close,522
+palladium high-low_lag1,520
+nasdaq high-low_lag5,519
+palladium volume_lag2,498
+nasdaq high-low,494
+oil high-low_lag5,488
+palladium high-low_lag2,479
+platinum high-low_roll_mean7,469
+nasdaq volume,461
+gold open,459
+palladium volume_lag1,454
+platinum volume_roll_mean14,446
+sp500 high-low_lag1,444
+sp500 volume_lag2,442
+sp500 high-low_lag2,437
+silver volume_roll_mean14,435
+sp500 volume_lag1,428
+nasdaq volume_lag1,425
+sp500 volume_lag5,398
+nasdaq volume_lag5,397
+platinum volume_roll_mean7,395
+gold volume_roll_mean14,393
+nasdaq high-low_lag2,383
+gold volume_roll_mean7,381
+sp500 high-low_roll_mean3,359
+palladium high-low_roll_mean3,357
+oil volume,352
+oil volume_lag2,351
+nasdaq high-low_lag1,350
+platinum high-low_roll_mean14,348
+oil volume_lag5,341
+silver high-low_roll_mean7,333
+oil high-low_roll_mean3,330
+nasdaq high-low_roll_mean3,320
+oil volume_lag1,307
+palladium volume_roll_mean3,304
+palladium high-low_roll_mean7,269
+silver open,267
+sp500 high-low_roll_mean7,256
+sp500 high-low_roll_mean14,253
+oil high-low_roll_mean7,249
+sp500 volume_roll_mean14,245
+sp500 volume_roll_mean7,241
+nasdaq volume_roll_mean3,240
+palladium volume_roll_mean7,240
+nasdaq volume_roll_mean14,228
+gold low_lag1,227
+gold open_lag5,223
+gold high_lag2,221
+palladium high-low_roll_mean14,220
+oil volume_roll_mean3,218
+nasdaq high-low_roll_mean14,206
+nasdaq high-low_roll_mean7,205
+usd_chf_lag5,204
+platinum close,204
+nasdaq volume_roll_mean7,203
+oil high-low_roll_mean14,201
+silver high-low_roll_mean14,190
+gold open_lag2,188
+gold open_lag1,184
+gold low_lag5,184
+palladium volume_roll_mean14,182
+gold high_lag5,154
+usd_chf,154
+gold low_roll_mean3,151
+silver low,148
+silver close_lag1,145
+oil volume_roll_mean14,145
+oil volume_roll_mean7,143
+gold high_roll_mean3,137
+gold low_roll_mean14,132
+eur_usd_lag5,132
+silver open_lag5,118
+gold high_roll_mean7,117
+usd_chf_lag1,111
+oil open,108
+gold high_lag1,107
+usd_chf_lag2,106
+usd_chf_roll_mean14,106
+silver low_lag5,102
+gold open_roll_mean14,101
+oil close_lag5,100
+silver open_lag2,97
+silver low_lag1,94
+oil open_lag5,93
+platinum open,92
+gold low_lag2,92
+silver close_lag5,91
+silver low_lag2,91
+usd_chf_roll_mean7,85
+silver high,85
+eur_usd_lag2,84
+eur_usd,84
+gold open_roll_mean7,82
+gold open_roll_mean3,81
+usd_chf_roll_mean3,80
+eur_usd_roll_mean3,80
+silver high_roll_mean7,79
+eur_usd_lag1,76
+oil close,75
+eur_usd_roll_mean14,73
+silver low_roll_mean3,72
+palladium close,71
+gold low_roll_mean7,69
+oil high,68
+us_rates_%_roll_mean14,68
+platinum high,68
+silver high_lag1,67
+platinum high_lag5,64
+silver high_lag5,63
+silver close_lag2,63
+silver open_lag1,63
+silver open_roll_mean3,63
+platinum close_lag5,62
+silver high_roll_mean14,62
+silver low_roll_mean14,61
+palladium open,61
+palladium low_lag5,60
+platinum open_lag2,59
+platinum open_lag5,59
+gold high_roll_mean14,59
+platinum low,59
+platinum low_lag1,55
+silver open_roll_mean14,55
+palladium open_lag5,55
+oil high_lag5,55
+eur_usd_roll_mean7,55
+silver close_roll_mean3,54
+platinum close_lag1,53
+platinum high_lag1,53
+oil open_lag1,53
+platinum open_lag1,51
+oil low_lag5,50
+oil high_lag2,48
+palladium high_lag5,48
+oil open_lag2,48
+palladium open_lag2,47
+palladium open_lag1,46
+platinum high_lag2,45
+platinum open_roll_mean14,44
+oil low,43
+palladium low,42
+oil high_lag1,42
+nasdaq open,41
+silver low_roll_mean7,41
+platinum low_lag5,40
+silver close_roll_mean7,39
+palladium high_lag2,39
+palladium high,39
+oil close_lag1,38
+nasdaq low,37
+silver open_roll_mean7,37
+palladium high_lag1,36
+silver high_roll_mean3,36
+sp500 close_lag5,36
+palladium low_lag1,35
+nasdaq close_lag5,33
+us_rates_%_roll_mean7,33
+palladium open_roll_mean7,32
+palladium close_lag5,32
+palladium close_lag2,31
+oil low_lag2,30
+palladium open_roll_mean14,30
+platinum low_lag2,30
+palladium close_lag1,30
+platinum close_roll_mean3,28
+platinum open_roll_mean7,28
+sp500 open,28
+oil open_roll_mean14,28
+oil close_roll_mean7,28
+platinum close_lag2,27
+us_rates_%,27
+sp500 open_lag2,27
+palladium close_roll_mean3,26
+oil close_lag2,26
+oil open_roll_mean7,25
+sp500 close,25
+silver high_lag2,25
+oil low_lag1,24
+platinum low_roll_mean3,24
+sp500 close_lag1,24
+oil high_roll_mean7,24
+palladium open_roll_mean3,23
+platinum high_roll_mean14,22
+palladium low_lag2,22
+nasdaq open_lag5,22
+nasdaq open_lag2,22
+sp500 open_lag5,21
+nasdaq close,21
+palladium low_roll_mean7,19
+platinum high_roll_mean3,19
+oil low_roll_mean14,19
+oil open_roll_mean3,19
+sp500 low,19
+sp500 open_roll_mean14,18
+platinum low_roll_mean14,18
+silver close_roll_mean14,17
+nasdaq high,16
+oil high_roll_mean14,16
+platinum open_roll_mean3,16
+nasdaq low_roll_mean14,16
+palladium high_roll_mean14,16
+sp500 low_lag5,16
+us_rates_%_lag5,16
+palladium high_roll_mean3,15
+sp500 low_lag1,15
+sp500 high,15
+nasdaq low_lag2,15
+nasdaq open_lag1,15
+nasdaq open_roll_mean14,14
+sp500 high_lag5,14
+nasdaq low_lag5,14
+oil close_roll_mean14,14
+sp500 close_roll_mean14,14
+palladium low_roll_mean14,14
+nasdaq low_lag1,14
+sp500 open_roll_mean7,13
+nasdaq high_roll_mean14,13
+palladium close_roll_mean7,13
+us_rates_%_lag2,13
+sp500 open_lag1,12
+oil close_roll_mean3,12
+platinum low_roll_mean7,12
+nasdaq high_lag1,11
+sp500 high_lag1,11
+sp500 close_lag2,11
+CPI_roll_mean14,11
+oil low_roll_mean7,10
+sp500 high_lag2,10
+oil low_roll_mean3,10
+nasdaq close_lag1,10
+palladium high_roll_mean7,10
+us_rates_%_lag1,10
+platinum close_roll_mean7,9
+CPI,9
+nasdaq high_lag2,9
+nasdaq high_lag5,9
+palladium close_roll_mean14,9
+oil high_roll_mean3,9
+nasdaq low_roll_mean3,8
+sp500 low_lag2,8
+platinum close_roll_mean14,8
+us_rates_%_roll_mean3,8
+sp500 low_roll_mean7,7
+nasdaq close_lag2,7
+platinum high_roll_mean7,7
+nasdaq close_roll_mean14,6
+sp500 high_roll_mean14,6
+nasdaq high_roll_mean7,6
+sp500 close_roll_mean3,5
+sp500 high_roll_mean7,5
+palladium low_roll_mean3,5
+sp500 open_roll_mean3,4
+nasdaq open_roll_mean3,4
+sp500 low_roll_mean14,4
+sp500 low_roll_mean3,4
+nasdaq low_roll_mean7,4
+GDP_roll_mean14,4
+nasdaq high_roll_mean3,4
+nasdaq open_roll_mean7,2
+CPI_roll_mean3,2
+CPI_lag1,2
+GDP_lag5,2
+nasdaq close_roll_mean3,2
+CPI_roll_mean7,2
+GDP,1
+GDP_lag1,1
+GDP_lag2,0
+GDP_roll_mean3,0
+CPI_lag2,0
+CPI_lag5,0
+GDP_roll_mean7,0
+nasdaq close_roll_mean7,0
+sp500 high_roll_mean3,0
+sp500 close_roll_mean7,0

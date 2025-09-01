@@ -1,0 +1,316 @@
+feature,importance
+gold high,0.46346954
+gold low,0.41923967
+gold high_roll_mean3,0.081314385
+gold open,0.029555887
+gold low_roll_mean3,0.0036646316
+gold high_lag2,0.00028035283
+gold low_roll_mean7,6.831476e-05
+sp500 close_roll_mean7,6.245757e-05
+gold high_roll_mean7,5.5124663e-05
+nasdaq close_lag5,4.09551e-05
+silver close_lag5,4.016402e-05
+gold open_lag1,3.0760893e-05
+gold low_lag1,3.0318097e-05
+nasdaq high_roll_mean14,2.8910885e-05
+oil low,2.8844244e-05
+gold open_roll_mean3,2.7508766e-05
+usd_chf_roll_mean14,2.683243e-05
+nasdaq close_roll_mean14,2.6683363e-05
+gold open_lag2,2.594384e-05
+nasdaq open_roll_mean7,2.4869783e-05
+gold high_lag1,2.3056242e-05
+nasdaq low_roll_mean7,2.2686147e-05
+sp500 low_lag2,2.2519293e-05
+nasdaq close_lag2,2.0919897e-05
+oil high_lag1,2.0215066e-05
+platinum close,1.990937e-05
+silver high,1.9688603e-05
+nasdaq close_roll_mean7,1.853302e-05
+gold volume,1.8012453e-05
+oil high_lag5,1.780158e-05
+silver high-low,1.7704058e-05
+gold low_lag2,1.6714668e-05
+gold open_roll_mean7,1.6578639e-05
+silver open_lag5,1.6115939e-05
+silver volume,1.611361e-05
+sp500 close_roll_mean3,1.5960975e-05
+silver close,1.5186075e-05
+nasdaq close_lag1,1.51143895e-05
+oil close_lag5,1.4937273e-05
+gold high_lag5,1.48719355e-05
+palladium low,1.4515948e-05
+nasdaq high_roll_mean3,1.4437602e-05
+oil close,1.4388309e-05
+gold low_roll_mean14,1.4362046e-05
+sp500 high_lag2,1.40799175e-05
+platinum high-low,1.38636005e-05
+palladium close,1.28824295e-05
+CPI_lag1,1.2844345e-05
+palladium open_lag5,1.2544737e-05
+silver low_lag5,1.2173901e-05
+sp500 high_roll_mean14,1.2048474e-05
+platinum close_lag2,1.1985252e-05
+nasdaq high-low_roll_mean14,1.19619535e-05
+sp500 low_lag5,1.1898251e-05
+nasdaq volume_roll_mean3,1.1674593e-05
+sp500 high_lag5,1.1427334e-05
+sp500 high-low_lag1,1.1235204e-05
+palladium open_roll_mean14,1.1225281e-05
+nasdaq high-low_roll_mean7,1.09759385e-05
+palladium volume_roll_mean7,1.087021e-05
+gold open_roll_mean14,1.0768029e-05
+sp500 open_roll_mean7,1.0762298e-05
+gold high_roll_mean14,1.0705185e-05
+silver close_roll_mean7,1.0590711e-05
+palladium high_lag2,1.0192366e-05
+oil low_lag1,1.0134979e-05
+palladium low_lag2,1.0109157e-05
+palladium low_roll_mean7,9.905882e-06
+gold low_lag5,9.883682e-06
+usd_chf_roll_mean3,9.612223e-06
+nasdaq low_lag1,9.581134e-06
+nasdaq open_lag2,9.170241e-06
+platinum high_lag1,9.150721e-06
+palladium low_roll_mean14,9.139285e-06
+eur_usd_roll_mean14,9.099215e-06
+nasdaq high_lag5,9.094549e-06
+silver low_roll_mean7,9.036359e-06
+sp500 close_lag5,9.017753e-06
+sp500 high-low_roll_mean3,8.85424e-06
+silver high_lag5,8.738285e-06
+oil high_lag2,8.713007e-06
+oil low_lag5,8.679143e-06
+palladium high_lag5,8.447102e-06
+sp500 close_roll_mean14,8.435623e-06
+platinum volume_roll_mean14,8.298446e-06
+palladium open_roll_mean7,8.167211e-06
+sp500 volume_roll_mean3,8.121029e-06
+silver high_roll_mean3,8.105275e-06
+silver high_lag1,8.087163e-06
+platinum low_roll_mean7,8.009222e-06
+silver low_lag2,8.006974e-06
+palladium high-low,7.978303e-06
+gold open_lag5,7.9343345e-06
+palladium high_roll_mean7,7.785746e-06
+nasdaq open_roll_mean14,7.764516e-06
+platinum open_roll_mean7,7.59219e-06
+nasdaq close,7.5867865e-06
+oil high_roll_mean3,7.5161283e-06
+platinum low_lag1,7.4277777e-06
+sp500 high_lag1,7.4071304e-06
+nasdaq high_roll_mean7,7.3764413e-06
+platinum low,7.331604e-06
+platinum high-low_roll_mean3,7.281054e-06
+usd_chf_roll_mean7,7.2186585e-06
+platinum high-low_roll_mean14,7.1401355e-06
+platinum high_lag2,7.1356903e-06
+gold volume_roll_mean7,7.134387e-06
+us_rates_%_lag1,7.1257905e-06
+palladium volume,7.1065597e-06
+platinum high,7.102628e-06
+silver low_lag1,7.0099327e-06
+palladium high-low_lag2,6.94424e-06
+palladium volume_roll_mean3,6.9082985e-06
+palladium high_roll_mean14,6.8792565e-06
+sp500 open_lag1,6.86871e-06
+eur_usd_lag1,6.8622867e-06
+usd_chf_lag1,6.8554655e-06
+nasdaq low_roll_mean3,6.7750766e-06
+oil high-low_roll_mean3,6.7656338e-06
+sp500 low_lag1,6.708151e-06
+platinum low_roll_mean3,6.6817042e-06
+nasdaq high,6.662082e-06
+oil open_roll_mean14,6.6125667e-06
+sp500 high_roll_mean7,6.5489917e-06
+silver volume_roll_mean7,6.5235668e-06
+platinum low_lag5,6.462562e-06
+silver high-low_roll_mean3,6.4436904e-06
+silver low_roll_mean3,6.441853e-06
+palladium close_lag5,6.425694e-06
+platinum volume_lag1,6.3945026e-06
+palladium volume_lag5,6.3766815e-06
+sp500 low_roll_mean3,6.370516e-06
+platinum volume_roll_mean7,6.368198e-06
+nasdaq high_lag2,6.296624e-06
+oil high-low_lag2,6.2795407e-06
+usd_chf_lag2,6.1286896e-06
+oil high-low_roll_mean14,6.050328e-06
+silver high_roll_mean7,5.983517e-06
+silver high-low_roll_mean14,5.970077e-06
+eur_usd_roll_mean7,5.9633994e-06
+gold volume_lag1,5.963171e-06
+platinum low_roll_mean14,5.9474546e-06
+palladium low_lag5,5.919305e-06
+palladium high,5.909371e-06
+oil low_lag2,5.8987216e-06
+platinum open_lag1,5.887555e-06
+silver low,5.8539104e-06
+sp500 open_lag2,5.8111427e-06
+silver high_roll_mean14,5.797314e-06
+platinum close_lag5,5.796847e-06
+oil volume_roll_mean7,5.793051e-06
+platinum volume_roll_mean3,5.786651e-06
+CPI_lag2,5.7822235e-06
+palladium volume_lag2,5.777601e-06
+silver volume_roll_mean3,5.770801e-06
+platinum high-low_lag5,5.6761223e-06
+nasdaq low_lag5,5.6720214e-06
+sp500 volume_roll_mean14,5.6669587e-06
+silver open_roll_mean3,5.6484064e-06
+palladium high-low_lag1,5.642349e-06
+oil volume_roll_mean14,5.621289e-06
+nasdaq volume_lag1,5.6168024e-06
+platinum close_roll_mean3,5.6074437e-06
+platinum high-low_roll_mean7,5.603591e-06
+palladium open_lag2,5.6024805e-06
+palladium high-low_roll_mean7,5.556844e-06
+platinum close_lag1,5.556329e-06
+us_rates_%_lag2,5.5483115e-06
+palladium low_roll_mean3,5.5229093e-06
+nasdaq open_lag5,5.4981538e-06
+gold volume_roll_mean14,5.494833e-06
+palladium high-low_roll_mean3,5.485995e-06
+sp500 volume_roll_mean7,5.4847756e-06
+eur_usd_lag2,5.481163e-06
+oil low_roll_mean3,5.4605252e-06
+platinum high-low_lag1,5.4364564e-06
+us_rates_%_roll_mean14,5.399512e-06
+silver high-low_lag1,5.3905082e-06
+oil close_roll_mean3,5.371779e-06
+oil open_roll_mean3,5.3067747e-06
+sp500 high-low_lag5,5.2414116e-06
+silver high-low_lag2,5.1757083e-06
+CPI_roll_mean14,5.1703155e-06
+palladium high-low_lag5,5.165499e-06
+platinum high_roll_mean7,5.1516736e-06
+sp500 open_roll_mean14,5.150952e-06
+nasdaq volume_roll_mean7,5.093084e-06
+usd_chf_lag5,5.0928666e-06
+silver volume_lag2,5.091256e-06
+silver volume_lag1,5.090739e-06
+oil high-low_lag1,5.084639e-06
+palladium close_lag1,5.0582703e-06
+nasdaq open_lag1,5.056966e-06
+nasdaq volume_lag5,5.049127e-06
+palladium high-low_roll_mean14,5.0333642e-06
+nasdaq high-low_roll_mean3,5.030404e-06
+sp500 close_lag1,4.979922e-06
+oil low_roll_mean14,4.9645873e-06
+platinum volume,4.9487567e-06
+oil low_roll_mean7,4.94798e-06
+platinum open_roll_mean3,4.92967e-06
+sp500 low_roll_mean14,4.9183777e-06
+platinum open_lag5,4.9141886e-06
+nasdaq open_roll_mean3,4.899437e-06
+sp500 high-low_roll_mean14,4.8923553e-06
+nasdaq volume_roll_mean14,4.8807597e-06
+palladium close_lag2,4.8392653e-06
+sp500 close_lag2,4.82403e-06
+gold volume_lag5,4.764612e-06
+oil high-low_roll_mean7,4.763448e-06
+silver close_roll_mean14,4.756957e-06
+CPI_lag5,4.747175e-06
+sp500 low_roll_mean7,4.7405097e-06
+silver open_lag1,4.7075973e-06
+palladium low_lag1,4.696031e-06
+CPI_roll_mean7,4.616473e-06
+silver high_lag2,4.6096693e-06
+silver close_lag1,4.602299e-06
+oil open_lag2,4.577094e-06
+silver volume_roll_mean14,4.5540824e-06
+platinum volume_lag5,4.5466104e-06
+palladium high_roll_mean3,4.52598e-06
+palladium open,4.5173865e-06
+oil high-low_lag5,4.495668e-06
+silver open_lag2,4.4833396e-06
+platinum volume_lag2,4.477531e-06
+nasdaq low,4.467604e-06
+palladium close_roll_mean3,4.452357e-06
+silver low_roll_mean14,4.451812e-06
+oil volume_lag1,4.3827167e-06
+nasdaq volume_lag2,4.3605e-06
+sp500 volume_lag5,4.352258e-06
+oil close_lag1,4.30963e-06
+oil volume_lag5,4.2934553e-06
+silver volume_lag5,4.228619e-06
+platinum high-low_lag2,4.2253587e-06
+oil high_roll_mean14,4.206453e-06
+palladium open_lag1,4.1831004e-06
+silver open_roll_mean14,4.161166e-06
+gold volume_roll_mean3,4.1373014e-06
+palladium volume_roll_mean14,4.1088647e-06
+silver open,4.1030935e-06
+platinum open,4.0840796e-06
+oil volume_lag2,4.073237e-06
+platinum high_lag5,4.072249e-06
+platinum high_roll_mean14,4.0603527e-06
+oil volume_roll_mean3,4.0502814e-06
+nasdaq high-low_lag2,4.047307e-06
+sp500 high-low_roll_mean7,3.9784304e-06
+sp500 high-low,3.9630168e-06
+nasdaq high-low_lag5,3.9453403e-06
+oil volume,3.9297083e-06
+silver high-low_lag5,3.91106e-06
+gold volume_lag2,3.8985377e-06
+oil open,3.890155e-06
+sp500 open_roll_mean3,3.8319963e-06
+nasdaq low_roll_mean14,3.81997e-06
+platinum high_roll_mean3,3.7974191e-06
+palladium open_roll_mean3,3.7898515e-06
+platinum open_lag2,3.7512227e-06
+platinum low_lag2,3.7465413e-06
+sp500 open_lag5,3.7338998e-06
+oil high-low,3.654851e-06
+silver high-low_roll_mean7,3.617398e-06
+palladium volume_lag1,3.5995847e-06
+oil close_roll_mean14,3.5963494e-06
+oil close_lag2,3.5707353e-06
+platinum close_roll_mean14,3.5665244e-06
+oil high,3.5352614e-06
+oil open_lag5,3.4932245e-06
+oil close_roll_mean7,3.493014e-06
+oil open_lag1,3.4777333e-06
+eur_usd_lag5,3.4701275e-06
+nasdaq high_lag1,3.4555353e-06
+eur_usd_roll_mean3,3.4206503e-06
+sp500 volume_lag1,3.380603e-06
+us_rates_%_lag5,3.2395099e-06
+sp500 high-low_lag2,3.2103826e-06
+palladium high_lag1,3.1733657e-06
+palladium close_roll_mean14,3.1516404e-06
+silver close_lag2,3.1403165e-06
+nasdaq open,3.1289433e-06
+nasdaq high-low_lag1,3.0599322e-06
+nasdaq high-low,3.0344e-06
+us_rates_%_roll_mean7,3.0050319e-06
+usd_chf,2.975913e-06
+silver open_roll_mean7,2.903563e-06
+silver close_roll_mean3,2.8466457e-06
+palladium close_roll_mean7,2.7983879e-06
+sp500 volume_lag2,2.711546e-06
+us_rates_%_roll_mean3,2.5424536e-06
+sp500 volume,2.4626129e-06
+sp500 low,2.4352707e-06
+nasdaq volume,2.3618463e-06
+GDP_roll_mean14,2.2765296e-06
+us_rates_%,2.258208e-06
+eur_usd,2.2039485e-06
+oil open_roll_mean7,2.1988171e-06
+nasdaq low_lag2,2.0662421e-06
+sp500 close,1.843432e-06
+nasdaq close_roll_mean3,1.7096476e-06
+oil high_roll_mean7,1.563118e-06
+CPI,1.5300508e-06
+platinum close_roll_mean7,1.5218303e-06
+platinum open_roll_mean14,1.474983e-06
+sp500 open,9.752684e-07
+sp500 high,9.48697e-07
+CPI_roll_mean3,7.331855e-07
+GDP_roll_mean7,4.8139344e-07
+sp500 high_roll_mean3,3.3230359e-07
+GDP_lag5,2.535132e-07
+GDP,1.4061061e-07
+GDP_lag2,6.3009873e-09
+GDP_roll_mean3,0.0
+GDP_lag1,0.0
