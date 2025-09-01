@@ -1,0 +1,155 @@
+stages:
+  - build
+  - deploy
+
+image: docker:20.10.16
+
+variables:
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_TLS_VERIFY: 1
+  DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+  DOCKER_DRIVER: overlay2
+
+  API_VERSION: 0.91
+  CI_API_PATH: "api"
+
+  UI_VERSION: 0.91
+  CI_GR_UI_PATH: "gradio_ui"
+  # CI_ST_UI_PATH: "streamlit"
+  PROJECT_NAME: "gold-price-prediction"
+  
+
+services:
+  - name: docker:20.10.16-dind
+    alias: docker
+
+before_script:
+  - for try in {1..10}; do sleep 0.5; docker info && break ; done 
+
+build:
+  stage: build
+  script:
+    - echo "${CI_REGISTRY_KEY}" | docker login ${CI_REGISTRY} -u json_key --password-stdin
+
+    - printf "%b\n" "$ENV_FILE" > ./api/.env
+    - printf "%b\n" "$ENV_FILE" > ./gradio_ui/.env
+    - cp "$ENV_FILE" ./api/.env 
+    - cp "$ENV_FILE" ./gradio_ui/.env
+
+    - docker build ./api 
+      --tag "${CI_REGISTRY}/${CI_API_PATH}:${API_VERSION}"
+    - docker push "${CI_REGISTRY}/${CI_API_PATH}:${API_VERSION}" 
+
+    - docker build ./gradio_ui
+      --tag "${CI_REGISTRY}/${CI_GR_UI_PATH}:${UI_VERSION}"
+    - docker push "${CI_REGISTRY}/${CI_GR_UI_PATH}:${UI_VERSION}"
+    
+
+deploy:
+  image: bitnami/kubectl:latest
+  stage: deploy
+  script:
+    - kubectl config use-context ${CI_PROJECT_PATH}:gold
+
+    # === Подхватить секреты из File-variable ENV_FILE ===
+    - set -a
+    - source "$ENV_FILE"
+    - set +a
+
+    # === Шаблонизация и применение ===
+    - >-
+      cat k8s.yaml
+      | sed -e "s,__UI__VERSION__,${CI_REGISTRY}/${CI_GR_UI_PATH}:${UI_VERSION},"
+      | sed -e "s,__API__VERSION__,${CI_REGISTRY}/${CI_API_PATH}:${API_VERSION},"
+      | sed -e "s,__PROJECT_NAME__,${PROJECT_NAME},"
+      | sed -e "s,__ALB_INGRESS_SUBNET__,${ALB_INGRESS_SUBNET},"
+      | sed -e "s,__ALB_INGRESS_SEC_GROUP__,${ALB_INGRESS_SEC_GROUP},"
+      | sed -e "s,__ALB_INGRESS_EXT_IP__,${ALB_INGRESS_EXT_IP},"
+      | sed -e "s,__TLS_ID__,${TLS_ID},"
+      | sed -e "s,__DOMAIN_NAME__,${DOMAIN_NAME},"
+      | sed -e "s,__AWS_ACCESS_KEY_ID__,${AWS_ACCESS_KEY_ID},"
+      | sed -e "s,__AWS_SECRET_ACCESS_KEY__,${AWS_SECRET_ACCESS_KEY},"
+      | sed -e "s,__MLFLOW_S3_ENDPOINT_URL__,${MLFLOW_S3_ENDPOINT_URL},"
+      | kubectl apply -f -
+  
+
+debug:
+  image: bitnami/kubectl:latest
+  stage: deploy
+  script:
+    - set -e
+    - kubectl config use-context ${CI_PROJECT_PATH}:gold
+    - NS=kube-node-lease
+
+    - echo "=== Pods (wide) ==="
+    - kubectl -n $NS get pods -o wide
+
+    - echo "=== Services & Endpoints ==="
+    - kubectl -n $NS get svc,ep
+
+    - echo "=== Ingress (short yaml) ==="
+    - kubectl -n $NS get ingress alb-${PROJECT_NAME} -o yaml | sed -n '1,120p'
+
+    - echo "=== Образы деплоев ==="
+    - kubectl -n $NS get deploy -l app=api-${PROJECT_NAME} -o jsonpath='{range .items[*]}{.metadata.name} -> {.spec.template.spec.containers[0].image}{"\n"}{end}' || true
+    - kubectl -n $NS get deploy -l app=ui-${PROJECT_NAME}  -o jsonpath='{range .items[*]}{.metadata.name} -> {.spec.template.spec.containers[0].image}{"\n"}{end}' || true
+
+    # Выберем Running pod-ы
+    - UI_POD=$(kubectl -n $NS get pod -l app=ui-${PROJECT_NAME} --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
+    - API_POD=$(kubectl -n $NS get pod -l app=api-${PROJECT_NAME} --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
+    - echo "UI_POD=$UI_POD  API_POD=$API_POD"
+
+    - echo "=== ENV внутри API-пода (AWS/MLFLOW) ==="
+    - kubectl -n $NS exec "$API_POD" -- sh -lc 'printenv | egrep "AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|MLFLOW_S3_ENDPOINT_URL|AWS_DEFAULT_REGION" || true'
+
+    - echo "=== Сетевой тест изнутри кластера ==="
+    - kubectl -n $NS run netdiag --image=curlimages/curl:8.10.1 --restart=Never --command -- sleep 3600
+    - kubectl -n $NS wait --for=condition=Ready pod/netdiag --timeout=60s
+    - echo "-- GET / у API --"
+    - kubectl -n $NS exec netdiag -- sh -lc 'curl -s -o /dev/null -w "HTTP:%{http_code}\n" http://api-'${PROJECT_NAME}'/ || true'
+    - echo "-- POST /predict (микро-csv) --"
+    - kubectl -n $NS exec netdiag -- sh -lc 'printf "date,feat\n2024-01-01,1\n" >/tmp/a.csv; curl -s -o /dev/null -w "HTTP:%{http_code}\n" -F file=@/tmp/a.csv http://api-'${PROJECT_NAME}'/predict || true'
+    - kubectl -n $NS delete pod/netdiag --force --grace-period=0 || true
+
+    - echo "=== Хвост логов API/UI ==="
+    - kubectl -n $NS logs deploy/api-${PROJECT_NAME} --tail=80 || true
+    - kubectl -n $NS logs deploy/ui-${PROJECT_NAME}  --tail=80 || true
+
+    - echo "=== Состояние ALB контроллера (может отсутствовать) ==="
+    - kubectl get pods -n yc-alb-ingress -o wide || true
+    - kubectl logs -n yc-alb-ingress deploy/yc-alb-ingress-controller --tail=100 || true
+  when: manual
+
+
+k8s-diagnose:
+  image: bitnami/kubectl:latest
+  stage: deploy
+  when: manual
+  allow_failure: true
+  script:
+    - kubectl config use-context ${CI_PROJECT_PATH}:gold
+    - NS=kube-node-lease
+    - echo "=== Pods (wide)==="
+    - kubectl -n $NS get pods -o wide
+    - echo "=== Services & Endpoints ==="
+    - kubectl -n $NS get svc,ep
+    - echo "=== Ingress (yaml кратко) ==="
+    - kubectl -n $NS get ingress alb-${PROJECT_NAME} -o yaml | sed -n '1,120p'
+    - echo "=== Текущие контейнерные образы ==="
+    - kubectl -n $NS get deploy -l app=api-${PROJECT_NAME} -o jsonpath='{range .items[*]}{.metadata.name} -> {.spec.template.spec.containers[0].image}{"\n"}{end}'
+    - kubectl -n $NS get deploy -l app=ui-${PROJECT_NAME}  -o jsonpath='{range .items[*]}{.metadata.name} -> {.spec.template.spec.containers[0].image}{"\n"}{end}'
+    - echo "=== ENV внутри UI-пода ==="
+    - UI_POD=$(kubectl -n $NS get pod -l app=ui-${PROJECT_NAME} -o jsonpath='{.items[0].metadata.name}')
+    - kubectl -n $NS exec $UI_POD -- sh -lc 'printenv | grep -E "API_URL|ROOT_PATH|PORT" || true'
+    - echo "=== Проверка сетки изнутри кластера ==="
+    - kubectl -n $NS run netdiag --image=curlimages/curl:8.10.1 --restart=Never --command -- sleep 3600
+    - kubectl -n $NS wait --for=condition=Ready pod/netdiag --timeout=60s
+    - echo "-- DNS и HTTP к API (GET /) --"
+    - kubectl -n $NS exec netdiag -- sh -lc 'getent hosts api-'${PROJECT_NAME}' || true; curl -sv --max-time 5 http://api-'${PROJECT_NAME}'/ 2>&1 | head -n 15 || true'
+    - echo "-- Тест POST с файлом в /predict --"
+    - kubectl -n $NS exec netdiag -- sh -lc 'printf "date,feat\n2024-01-01,1\n" >/tmp/a.csv; curl -s -o /dev/null -w "HTTP:%{http_code}\n" -F file=@/tmp/a.csv http://api-'${PROJECT_NAME}'/predict || true'
+    - echo "=== Логи API/UI (хвост) ==="
+    - kubectl -n $NS logs deploy/api-${PROJECT_NAME} --tail=120 || true
+    - kubectl -n $NS logs deploy/ui-${PROJECT_NAME}  --tail=120 || true
+    - kubectl -n $NS delete pod/netdiag --force --grace-period=0 || true

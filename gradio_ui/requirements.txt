@@ -1,0 +1,5 @@
+gradio==3.50.2
+pandas
+psutil==7.0.0
+setuptools==80.9.0
+openpyxl

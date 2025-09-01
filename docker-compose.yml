@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: finance_api
+    env_file:
+      - .env
+    environment:
+      # переопредели при нужде
+      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI:-http://84.201.144.227:8000}
+      - XGBOOST_RUN_ID=${XGBOOST_RUN_ID:-439c6ad7b4004723beb29f78bed50465}
+      - MODEL_URI=${MODEL_URI:-runs:/${XGBOOST_RUN_ID}/model}
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: finance_ui
+    env_file:
+      - .env
+    environment:
+      - API_URL=${API_URL:-http://localhost:8000/predict}
+    ports:
+      - "7860:7860"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+networks:
+  default:
+    name: finance-net
+    driver: bridge
