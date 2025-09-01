@@ -18,6 +18,23 @@ spec:
           image: __API__VERSION__
           ports:
             - containerPort: 8000
+          
+          # --- РЕШЕНИЕ: ДОБАВЛЕНА ПРОВЕРКА ГОТОВНОСТИ ---
+          # Kubernetes не будет отправлять трафик на этот под,
+          # пока приложение внутри не начнет отвечать на порту 8000.
+          readinessProbe:
+            httpGet:
+              path: /  # Проверяем корневой эндпоинт FastAPI
+              port: 8000 # Порт, на котором работает uvicorn
+            # Начинаем проверку через 45 секунд, чтобы дать модели время загрузиться
+            initialDelaySeconds: 45 
+            # Проверяем каждые 15 секунд
+            periodSeconds: 15
+            # Считаем под "упавшим", если 4 проверки подряд неудачны
+            failureThreshold: 4
+            # Ждем ответа на проверку 5 секунд
+            timeoutSeconds: 5
+
           env:
             - name: AWS_ACCESS_KEY_ID
               value: "__AWS_ACCESS_KEY_ID__"
@@ -30,10 +47,10 @@ spec:
           resources:
             limits:
               cpu: 1
-              memory: 4Gi  # <-- Увеличено
+              memory: 4Gi
             requests:
               cpu: 0.5
-              memory: 2Gi  # <-- Увеличено```
+              memory: 2Gi
 ---
 apiVersion: v1
 kind: Service
@@ -100,13 +117,10 @@ kind: Ingress
 metadata:
   name: alb-__PROJECT_NAME__ 
   annotations:
-    # --- ЭТО КОНФИГУРАЦИЯ ДЛЯ YANDEX CLOUD ALB ---
     ingress.alb.yc.io/subnets: __ALB_INGRESS_SUBNET__
     ingress.alb.yc.io/security-groups: __ALB_INGRESS_SEC_GROUP__
     ingress.alb.yc.io/external-ipv4-address: __ALB_INGRESS_EXT_IP__
     ingress.alb.yc.io/group-name: __PROJECT_NAME__-ingress-group
-
-    # --- ЭТО ИСПРАВЛЕНИЕ: ДОБАВЛЯЕМ ПРАВИЛЬНЫЕ ТАЙМАУТЫ ДЛЯ ALB ---
     ingress.alb.yc.io/requests-timeout: "300s"
     ingress.alb.yc.io/connect-timeout: "30s"
 
