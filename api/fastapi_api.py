@@ -3,6 +3,7 @@ import mlflow
 import pandas as pd
 import numpy as np
 import io
+import os
 import traceback
 from fastapi import UploadFile, File, HTTPException
 from dotenv import load_dotenv
@@ -13,6 +14,7 @@ load_dotenv()
 mlflow.set_tracking_uri("http://84.201.144.227:8000")
 XGBOOST_RUN_ID = "82d0a09af0d144f3bdc3f7111ea5b099"
 MODEL_URI = f"runs:/{XGBOOST_RUN_ID}/model_pipeline"
+ROOT_PATH = os.getenv("ROOT_PATH", "/api-gold-price-prediction")
 
 # Глобальный словарь для хранения модели
 ml_models = {}
@@ -53,10 +55,10 @@ async def lifespan(app: fastapi.FastAPI):
 # --- 3. ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ С LIFESPAN ---
 app = fastapi.FastAPI(
     title="API для предсказания цены золота",
-    root_path="/api-gold-price-prediction",  # <-- критично для Ingress
-    lifespan=lifespan,
+    root_path=ROOT_PATH,          # <— из env
     docs_url="/docs",
     openapi_url="/openapi.json",
+    lifespan=lifespan,            # <— ЭТО ВАЖНО: модель загрузится на старте
 )
 @app.get("/")
 def root():
