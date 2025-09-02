@@ -119,11 +119,10 @@ with gr.Blocks(theme=gr.themes.Default(), title="Предсказание цен
     )
 
 if __name__ == "__main__":
-    demo.queue()
+    # demo.queue()   # <-- отключаем очередь
     demo.launch(
         server_name="0.0.0.0",
         server_port=int(os.getenv("PORT", "7860")),
         root_path=os.getenv("ROOT_PATH", "/ui-gold-price-prediction"),
     )
-
  
