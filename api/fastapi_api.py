@@ -36,7 +36,7 @@ async def lifespan(app: fastapi.FastAPI):
                 'year', 'month', 'dayofweek', 'silver close', 'oil close', 'dxy close',
                 'silver close_lag1', 'silver close_roll_mean3', 'oil close_lag1',
                 'oil close_roll_mean3', 'dxy close_lag1', 'dxy close_roll_mean3',
-                'gold close_lag1'
+                'gold_close_lag1'
             ]
         print(f"--- Модель успешно загружена. Ожидается признаков: {len(ml_models['expected_features'])} ---")
     except Exception as e:
@@ -51,11 +51,21 @@ async def lifespan(app: fastapi.FastAPI):
 
 
 # --- 3. ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ С LIFESPAN ---
-app = fastapi.FastAPI(title="API для предсказания цены золота", lifespan=lifespan)
-
+app = fastapi.FastAPI(
+    title="API для предсказания цены золота",
+    root_path="/api-gold-price-prediction",  # <-- критично для Ingress
+    lifespan=lifespan,
+    docs_url="/docs",
+    openapi_url="/openapi.json",
+)
 @app.get("/")
 def root():
     return {"message": "API для предсказания цены золота. Используйте эндпоинт /predict."}
+
+@app.get("/healthz")
+def healthz():
+    ok = "gold_predictor" in ml_models
+    return {"ok": ok}
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
