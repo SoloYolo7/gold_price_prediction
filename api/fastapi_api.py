@@ -24,11 +24,11 @@ RUN_ID = os.getenv("MLFLOW_RUN_ID", "82d0a09af0d144f3bdc3f7111ea5b099")
 MODEL_URI = os.getenv("MODEL_URI", f"runs:/{RUN_ID}/model_pipeline")
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
-# ВАЖНО: НЕ задаём root_path. Роуты зарегистрируем дважды (с префиксом и без).
+# ВАЖНО: НЕ ставим префикс в docs/openapi, иначе получится «двойной» путь.
 app = fastapi.FastAPI(
     title="API для предсказания цены золота",
-    docs_url=f"{API_PREFIX}/docs",
-    openapi_url=f"{API_PREFIX}/openapi.json",
+    docs_url="/docs",
+    openapi_url="/openapi.json",
 )
 
 app.add_middleware(
@@ -156,18 +156,15 @@ def build_router(prefix: str = "") -> APIRouter:
         feats_req = _state["features_required"]
         feats_opt = _state["features_optional"]
 
-        # производные
         try:
             df_in = _compute_engineered(df_in, feats_all)
         except Exception as e:
             raise HTTPException(400, f"Ошибка при вычислении производных признаков: {e}")
 
-        # обязательные
         miss = [c for c in feats_req if c not in df_in.columns]
         if miss:
             raise HTTPException(400, {"error": "Отсутствуют обязательные колонки", "missing_required": miss})
 
-        # опциональные
         for c in feats_opt:
             if c not in df_in.columns:
                 df_in[c] = np.nan
