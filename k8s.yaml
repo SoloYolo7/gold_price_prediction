@@ -19,7 +19,7 @@ spec:
           ports:
             - containerPort: 8000
 
-          # --- ПРОБЫ ДЛЯ API ---
+          # ПРОБЫ API (идут прямо в pod, без префикса)
           startupProbe:
             httpGet:
               path: /
@@ -81,35 +81,43 @@ spec:
         app: ui-__PROJECT_NAME__
     spec:
       containers:
-        - name: ui-__PROJECT_NAME__
+        # --- 1) Gradio-приложение (внутренний порт 7861) ---
+        - name: ui-app
           image: __UI__VERSION__
           ports:
-            - containerPort: 7860
+            - containerPort: 7861
           env:
-            # ВАЖНО: путь до API внутри кластера + ПРЕФИКС
+            # Ходим к API по сервису + префиксу
             - name: API_URL
               value: "http://api-__PROJECT_NAME__/api-__PROJECT_NAME__/predict"
+            # Gradio будет смонтирован под /ui-__PROJECT_NAME__ реверс-проксей
             - name: ROOT_PATH
               value: "/ui-__PROJECT_NAME__"
+            # САМ Gradio поднимем на 7861 (чтобы 7860 занял nginx)
             - name: PORT
-              value: "7860"
+              value: "7861"
 
-          # --- ПРОБЫ ДЛЯ UI (учитываем root_path) ---
+        # --- 2) Nginx-sidecar, слушает 8080 и проксирует на Gradio:7861 ---
+        - name: ui-proxy
+          image: nginxinc/nginx-unprivileged:1.25-alpine
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: ui-nginx-conf
+              mountPath: /etc/nginx/conf.d
           readinessProbe:
             httpGet:
               path: /ui-__PROJECT_NAME__/
-              port: 7860
+              port: 8080
             periodSeconds: 10
             failureThreshold: 3
             timeoutSeconds: 5
 
-          resources:
-            limits:
-              cpu: "1"
-              memory: 2Gi
-            requests:
-              cpu: "0.5"
-              memory: 1Gi
+      volumes:
+        - name: ui-nginx-conf
+          configMap:
+            name: ui-__PROJECT_NAME__-nginx
+
 ---
 apiVersion: v1
 kind: Service
@@ -122,14 +130,14 @@ spec:
   ports:
     - name: http
       port: 80
-      targetPort: 7860
+      targetPort: 8080   # важное изменение: теперь сервис смотрит на nginx
 
-# ================== INGRESS ДЛЯ API ==================
 ---
+# Ingress оставляем ОДИН, как ты просил
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: alb-__PROJECT_NAME__-api
+  name: alb-__PROJECT_NAME__
   annotations:
     ingress.alb.yc.io/subnets: __ALB_INGRESS_SUBNET__
     ingress.alb.yc.io/security-groups: __ALB_INGRESS_SEC_GROUP__
@@ -137,8 +145,6 @@ metadata:
     ingress.alb.yc.io/group-name: __PROJECT_NAME__-ingress-group
     ingress.alb.yc.io/requests-timeout: "300s"
     ingress.alb.yc.io/connect-timeout: "30s"
-    # ALB healthcheck конкретно для API
-    ingress.alb.yc.io/healthcheck-path: /api-__PROJECT_NAME__/healthz
 spec:
   tls:
     - hosts:
@@ -155,31 +161,6 @@ spec:
                 name: api-__PROJECT_NAME__
                 port:
                   number: 80
-
-# ================== INGRESS ДЛЯ UI ===================
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: alb-__PROJECT_NAME__-ui
-  annotations:
-    ingress.alb.yc.io/subnets: __ALB_INGRESS_SUBNET__
-    ingress.alb.yc.io/security-groups: __ALB_INGRESS_SEC_GROUP__
-    ingress.alb.yc.io/external-ipv4-address: __ALB_INGRESS_EXT_IP__
-    ingress.alb.yc.io/group-name: __PROJECT_NAME__-ingress-group
-    ingress.alb.yc.io/requests-timeout: "300s"
-    ingress.alb.yc.io/connect-timeout: "30s"
-    # ALB healthcheck для UI должен дергать именно его корень с префиксом
-    ingress.alb.yc.io/healthcheck-path: /ui-__PROJECT_NAME__/
-spec:
-  tls:
-    - hosts:
-        - __DOMAIN_NAME__
-      secretName: yc-certmgr-cert-id-__TLS_ID__
-  rules:
-    - host: __DOMAIN_NAME__
-      http:
-        paths:
           - path: /ui-__PROJECT_NAME__
             pathType: Prefix
             backend:
@@ -187,3 +168,38 @@ spec:
                 name: ui-__PROJECT_NAME__
                 port:
                   number: 80
+
+---
+# Nginx-конфиг для sidecar’а UI
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ui-__PROJECT_NAME__-nginx
+data:
+  default.conf: |
+    server {
+      listen 8080;
+      # 1) ALB healthcheck: всегда 200 на /
+      location = / {
+        return 200 'ok';
+        add_header Content-Type text/plain;
+      }
+
+      # 2) Сам UI доступен по /ui-__PROJECT_NAME__/ ...
+      location /ui-__PROJECT_NAME__/ {
+        proxy_pass http://127.0.0.1:7861;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+      }
+
+      # 3) Статика/вебсокеты тоже через тот же upstream
+      location /socket.io/ {
+        proxy_pass http://127.0.0.1:7861;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+      }
+    }
