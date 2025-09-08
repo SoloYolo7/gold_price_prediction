@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api-__PROJECT_NAME__
+  namespace: kube-node-lease
 spec:
   replicas: 1
   selector:
@@ -16,60 +17,44 @@ spec:
       containers:
         - name: api-__PROJECT_NAME__
           image: __API__VERSION__
-          ports:
-            - containerPort: 8000
-
-          # ПРОБЫ API (идут прямо в pod, без префикса)
+          ports: [{ containerPort: 8000 }]
           startupProbe:
-            httpGet:
-              path: /
-              port: 8000
+            httpGet: { path: "/", port: 8000 }
             initialDelaySeconds: 30
             periodSeconds: 10
             failureThreshold: 30
           readinessProbe:
-            httpGet:
-              path: /
-              port: 8000
+            httpGet: { path: "/", port: 8000 }
             periodSeconds: 15
             failureThreshold: 3
             timeoutSeconds: 5
-
           env:
-            - name: AWS_ACCESS_KEY_ID
-              value: "__AWS_ACCESS_KEY_ID__"
-            - name: AWS_SECRET_ACCESS_KEY
-              value: "__AWS_SECRET_ACCESS_KEY__"
-            - name: MLFLOW_S3_ENDPOINT_URL
-              value: "__MLFLOW_S3_ENDPOINT_URL__"
-            - name: AWS_DEFAULT_REGION
-              value: "ru-central1"
+            - { name: AWS_ACCESS_KEY_ID, value: "__AWS_ACCESS_KEY_ID__" }
+            - { name: AWS_SECRET_ACCESS_KEY, value: "__AWS_SECRET_ACCESS_KEY__" }
+            - { name: MLFLOW_S3_ENDPOINT_URL, value: "__MLFLOW_S3_ENDPOINT_URL__" }
+            - { name: AWS_DEFAULT_REGION, value: "ru-central1" }
           resources:
-            limits:
-              cpu: "1"
-              memory: 4Gi
-            requests:
-              cpu: "0.5"
-              memory: 2Gi
+            limits: { cpu: "1", memory: 4Gi }
+            requests: { cpu: "0.5", memory: 2Gi }
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: api-__PROJECT_NAME__
+  namespace: kube-node-lease
 spec:
-  selector:
-    app: api-__PROJECT_NAME__
+  selector: { app: api-__PROJECT_NAME__ }
   type: NodePort
   ports:
-    - name: http
-      port: 80
-      targetPort: 8000
+    - { name: http, port: 80, targetPort: 8000 }
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ui-__PROJECT_NAME__
+  namespace: kube-node-lease
 spec:
   replicas: 1
   selector:
@@ -81,38 +66,28 @@ spec:
         app: ui-__PROJECT_NAME__
     spec:
       containers:
-        # --- 1) Gradio-приложение (внутренний порт 7861) ---
+        # Gradio на 7861
         - name: ui-app
           image: __UI__VERSION__
-          ports:
-            - containerPort: 7861
+          ports: [{ containerPort: 7861 }]
           env:
-            # Ходим к API по сервису + префиксу
             - name: API_URL
               value: "http://api-__PROJECT_NAME__/api-__PROJECT_NAME__/predict"
-            # Gradio будет смонтирован под /ui-__PROJECT_NAME__ реверс-проксей
             - name: ROOT_PATH
               value: "/ui-__PROJECT_NAME__"
-            # САМ Gradio поднимем на 7861 (чтобы 7860 занял nginx)
             - name: PORT
               value: "7861"
-
-        # --- 2) Nginx-sidecar, слушает 8080 и проксирует на Gradio:7861 ---
+        # Nginx прокси на 8080 (отдаёт 200 на /, проксирует /ui-... на 7861)
         - name: ui-proxy
           image: nginxinc/nginx-unprivileged:1.25-alpine
-          ports:
-            - containerPort: 8080
+          ports: [{ containerPort: 8080 }]
           volumeMounts:
-            - name: ui-nginx-conf
-              mountPath: /etc/nginx/conf.d
+            - { name: ui-nginx-conf, mountPath: /etc/nginx/conf.d }
           readinessProbe:
-            httpGet:
-              path: /ui-__PROJECT_NAME__/
-              port: 8080
+            httpGet: { path: "/ui-__PROJECT_NAME__/", port: 8080 }
             periodSeconds: 10
             failureThreshold: 3
             timeoutSeconds: 5
-
       volumes:
         - name: ui-nginx-conf
           configMap:
@@ -123,21 +98,19 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ui-__PROJECT_NAME__
+  namespace: kube-node-lease
 spec:
-  selector:
-    app: ui-__PROJECT_NAME__
+  selector: { app: ui-__PROJECT_NAME__ }
   type: NodePort
   ports:
-    - name: http
-      port: 80
-      targetPort: 8080   # важное изменение: теперь сервис смотрит на nginx
+    - { name: http, port: 80, targetPort: 8080 }  # ВАЖНО: теперь таргетим nginx
 
 ---
-# Ingress оставляем ОДИН, как ты просил
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: alb-__PROJECT_NAME__
+  namespace: kube-node-lease
   annotations:
     ingress.alb.yc.io/subnets: __ALB_INGRESS_SUBNET__
     ingress.alb.yc.io/security-groups: __ALB_INGRESS_SEC_GROUP__
@@ -147,8 +120,7 @@ metadata:
     ingress.alb.yc.io/connect-timeout: "30s"
 spec:
   tls:
-    - hosts:
-        - __DOMAIN_NAME__
+    - hosts: [ __DOMAIN_NAME__ ]
       secretName: yc-certmgr-cert-id-__TLS_ID__
   rules:
     - host: __DOMAIN_NAME__
@@ -157,35 +129,28 @@ spec:
           - path: /api-__PROJECT_NAME__
             pathType: Prefix
             backend:
-              service:
-                name: api-__PROJECT_NAME__
-                port:
-                  number: 80
+              service: { name: api-__PROJECT_NAME__, port: { number: 80 } }
           - path: /ui-__PROJECT_NAME__
             pathType: Prefix
             backend:
-              service:
-                name: ui-__PROJECT_NAME__
-                port:
-                  number: 80
+              service: { name: ui-__PROJECT_NAME__, port: { number: 80 } }
 
 ---
-# Nginx-конфиг для sidecar’а UI
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: ui-__PROJECT_NAME__-nginx
+  namespace: kube-node-lease
 data:
   default.conf: |
     server {
       listen 8080;
-      # 1) ALB healthcheck: всегда 200 на /
+      # ALB healthcheck: всегда 200 на /
       location = / {
         return 200 'ok';
         add_header Content-Type text/plain;
       }
-
-      # 2) Сам UI доступен по /ui-__PROJECT_NAME__/ ...
+      # Роутим UI на Gradio (7861)
       location /ui-__PROJECT_NAME__/ {
         proxy_pass http://127.0.0.1:7861;
         proxy_http_version 1.1;
@@ -194,8 +159,6 @@ data:
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
       }
-
-      # 3) Статика/вебсокеты тоже через тот же upstream
       location /socket.io/ {
         proxy_pass http://127.0.0.1:7861;
         proxy_http_version 1.1;
