@@ -5,10 +5,24 @@ import pandas as pd
 import requests
 from datetime import datetime
 
-# адрес API берём из окружения
-API_URL = os.getenv("API_URL", "http://api-gold-price-prediction/api-gold-price-prediction/predict")
+# ── Настройки ──────────────────────────────────────────────────────────────────
+# Имя проекта нужно, чтобы по умолчанию собрать внутренний адрес сервиса API.
+PROJECT_NAME = os.getenv("PROJECT_NAME", "gold-price-prediction")
+
+# ВНУТРИ кластера ходим в API БЕЗ префикса: /predict
+DEFAULT_API_URL = f"http://api-{PROJECT_NAME}/predict"
+API_URL = os.getenv("API_URL", DEFAULT_API_URL)
+
+# Внешняя ссылка на доки (для пользователей в браузере)
+DOMAIN_NAME = os.getenv("DOMAIN_NAME", "")
+PUBLIC_API_DOCS = os.getenv(
+    "PUBLIC_API_DOCS",
+    f"https://{DOMAIN_NAME}/api-{PROJECT_NAME}/docs" if DOMAIN_NAME else ""
+)
+
 REQUEST_TIMEOUT = float(os.getenv("REQUEST_TIMEOUT", "60"))
 
+# ── Вспомогательное ────────────────────────────────────────────────────────────
 def _pretty_http_error(resp: requests.Response) -> str:
     try:
         payload = resp.json()
@@ -20,6 +34,7 @@ def _pretty_http_error(resp: requests.Response) -> str:
     except Exception:
         return resp.text
 
+# ── Инференс через API ─────────────────────────────────────────────────────────
 def predict_gold_price(uploaded_file):
     if uploaded_file is None:
         raise gr.Error("Пожалуйста, загрузите CSV файл.")
@@ -34,7 +49,7 @@ def predict_gold_price(uploaded_file):
         data = resp.json()
         predictions = data.get("predictions")
     except requests.exceptions.ConnectionError:
-        raise gr.Error(f"Ошибка подключения к API: {API_URL}")
+        raise gr.Error(f"Ошибка подключения к API (внутренний адрес): {API_URL}")
     except requests.exceptions.Timeout:
         raise gr.Error(f"Превышено время ожидания ответа API (timeout={REQUEST_TIMEOUT}s).")
     except requests.exceptions.HTTPError:
@@ -76,19 +91,20 @@ def predict_gold_price(uploaded_file):
         gr.update(visible=xlsx_path is not None, value=xlsx_path or None),
     )
 
+# ── UI ─────────────────────────────────────────────────────────────────────────
 with gr.Blocks(theme=gr.themes.Default(), title="Предсказание цены золота") as demo:
     gr.Markdown("# 📈 Предсказание цены на золото")
-    gr.Markdown(
-        "Загрузите CSV с историческими данными и получите прогноз."
-        f"<br/><small>API: <code>{API_URL}</code></small>"
-    )
+
+    # Не показываем внутренний API_URL (он не открывается из браузера).
+    if PUBLIC_API_DOCS:
+        gr.Markdown(
+            f'<small>Документация API: '
+            f'<a href="{PUBLIC_API_DOCS}" target="_blank">{PUBLIC_API_DOCS}</a></small>'
+        )
 
     with gr.Row():
         with gr.Column(scale=1):
-            file_input = gr.File(
-                label="CSV файл",
-                file_types=[".csv"],
-            )
+            file_input = gr.File(label="CSV файл", file_types=[".csv"])
             btn_predict = gr.Button("Сделать прогноз", variant="primary")
             btn_download_csv = gr.File(label="Скачать CSV", visible=False)
             btn_download_excel = gr.File(label="Скачать Excel", visible=False)
@@ -106,5 +122,5 @@ if __name__ == "__main__":
     demo.launch(
         server_name="0.0.0.0",
         server_port=int(os.getenv("PORT", "7860")),
-        root_path=os.getenv("ROOT_PATH", "/ui-gold-price-prediction"),
+        root_path=os.getenv("ROOT_PATH", f"/ui-{PROJECT_NAME}"),
     )
