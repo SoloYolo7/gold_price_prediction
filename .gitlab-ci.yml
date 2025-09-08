@@ -11,10 +11,10 @@ variables:
   DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
   DOCKER_DRIVER: overlay2
 
-  API_VERSION: 0.126
+  API_VERSION: 0.127
   CI_API_PATH: "api"
 
-  UI_VERSION: 0.126
+  UI_VERSION: 0.127
   CI_GR_UI_PATH: "gradio_ui"
   # CI_ST_UI_PATH: "streamlit"
   PROJECT_NAME: "gold-price-prediction"
