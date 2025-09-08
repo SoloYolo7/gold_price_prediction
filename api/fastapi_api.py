@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.openapi.docs import get_swagger_ui_html   # <— ДОБАВЛЕНО
 
 # ── ENV ────────────────────────────────────────────────────────────────────────
 load_dotenv()
@@ -24,11 +25,11 @@ RUN_ID = os.getenv("MLFLOW_RUN_ID", "82d0a09af0d144f3bdc3f7111ea5b099")
 MODEL_URI = os.getenv("MODEL_URI", f"runs:/{RUN_ID}/model_pipeline")
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
-# ВАЖНО: НЕ ставим префикс в docs/openapi, иначе получится «двойной» путь.
+# ── FastAPI: отключаем встроенные доки, будем отдавать их сами на 4 путях ─────
 app = fastapi.FastAPI(
     title="API для предсказания цены золота",
-    docs_url=f"{API_PREFIX}/docs",   # <-- отдаём Swagger по префиксу
-    openapi_url="/openapi.json",     # <-- а спецификацию без префикса (Swagger сам подставит baseUrl)
+    docs_url=None,        # <— было: docs_url=f"{API_PREFIX}/docs"
+    openapi_url=None,     # <— было: "/openapi.json"
 )
 
 app.add_middleware(
@@ -39,8 +40,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-_state: Dict[str, object] = {}
+# ── Кастомные доки (оба варианта путей: с префиксом и без) ────────────────────
+@app.get("/openapi.json", include_in_schema=False)
+def openapi_root():
+    return app.openapi()
 
+@app.get(f"{API_PREFIX}/openapi.json", include_in_schema=False)
+def openapi_prefixed():
+    return app.openapi()
+
+@app.get("/docs", include_in_schema=False)
+def docs_root():
+    # Для единообразия даже локальный /docs смотрит на префиксный openapi.json
+    return get_swagger_ui_html(
+        title="API для предсказания цены золота",
+        openapi_url=f"{API_PREFIX}/openapi.json",
+    )
+
+@app.get(f"{API_PREFIX}/docs", include_in_schema=False)
+def docs_prefixed():
+    return get_swagger_ui_html(
+        title="API для предсказания цены золота",
+        openapi_url=f"{API_PREFIX}/openapi.json",
+    )
+
+# (необязательно) пинг корня префикса
+@app.get(f"{API_PREFIX}/", include_in_schema=False)
+def prefixed_root():
+    return {"ok": True, "docs": f"{API_PREFIX}/docs"}
+
+# ── Состояние ─────────────────────────────────────────────────────────────────
+_state: Dict[str, object] = {}
 
 def _parse_schema(pyfunc_model) -> dict:
     schema = pyfunc_model.metadata.get_input_schema()
@@ -54,7 +84,6 @@ def _parse_schema(pyfunc_model) -> dict:
             else:
                 features_required.append(name)
     return {"all": features_all, "required": features_required, "optional": features_optional}
-
 
 def _compute_engineered(df: pd.DataFrame, target_cols: List[str]) -> pd.DataFrame:
     if "date" in df.columns:
@@ -84,7 +113,6 @@ def _compute_engineered(df: pd.DataFrame, target_cols: List[str]) -> pd.DataFram
 
     return df.ffill().bfill()
 
-
 @asynccontextmanager
 async def lifespan(_: fastapi.FastAPI):
     try:
@@ -100,9 +128,7 @@ async def lifespan(_: fastapi.FastAPI):
     yield
     _state.clear()
 
-
 app.router.lifespan_context = lifespan
-
 
 def build_router(prefix: str = "") -> APIRouter:
     r = APIRouter(prefix=prefix)
@@ -179,7 +205,6 @@ def build_router(prefix: str = "") -> APIRouter:
         return {"predictions": np.asarray(preds).ravel().tolist()}
 
     return r
-
 
 # Без префикса — для внутри-кластерных клиентов (UI)
 app.include_router(build_router(""))
