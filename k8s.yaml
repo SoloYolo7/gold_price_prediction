@@ -94,7 +94,7 @@ spec:
             - containerPort: 7860
           env:
             - name: API_URL
-              value: "http://api-__PROJECT_NAME__/predict"
+              value: "http://api-__PROJECT_NAME__/api-__PROJECT_NAME__/predict"
             - name: ROOT_PATH
               value: "/ui-__PROJECT_NAME__"
             - name: PORT
