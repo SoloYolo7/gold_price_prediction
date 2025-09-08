@@ -9,30 +9,22 @@ import mlflow
 import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
-from fastapi import UploadFile, File, HTTPException, APIRouter
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, PlainTextResponse
+from fastapi import UploadFile, File, HTTPException
+from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.openapi.utils import get_openapi
+from fastapi.openapi.docs import get_swagger_ui_html
 
-
-# ========= 0) Конфиг =========
+# ========= 0. Конфиг =========
 load_dotenv()
 
-# Префикс, под которым сервис опубликован через ALB Ingress:
-# например, "/api-gold-price-prediction"
-API_PREFIX: str = os.getenv("API_PREFIX", "/api-gold-price-prediction").rstrip("/") or "/api-gold-price-prediction"
+API_PREFIX = "/api-gold-price-prediction"
 
-# MLflow
-MLFLOW_TRACKING_URI: str = os.getenv("MLFLOW_TRACKING_URI", "http://84.201.144.227:8000")
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://84.201.144.227:8000")
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
-# ВАЖНО: Точный путь к артефакту (чаще всего "runs:/<RUN_ID>/model")
-# Если у вас действительно папка называется "model_pipeline", оставьте её.
-RUN_ID: str = os.getenv("RUN_ID", "82d0a09af0d144f3bdc3f7111ea5b099")
-MODEL_SUBPATH: str = os.getenv("MODEL_SUBPATH", "model_pipeline")  # или "model"
-MODEL_URI: str = os.getenv("MODEL_URI", f"runs:/{RUN_ID}/{MODEL_SUBPATH}")
+RUN_ID = os.getenv("RUN_ID", "82d0a09af0d144f3bdc3f7111ea5b099")
+MODEL_URI = os.getenv("MODEL_URI", f"runs:/{RUN_ID}/model_pipeline")
 
-
-# Хранилище модели и сопутствующих данных в памяти процесса
 ml_models: Dict[str, Any] = {
     "model": None,
     "features_all": None,
@@ -43,9 +35,6 @@ ml_models: Dict[str, Any] = {
 
 
 def _parse_schema(pyfunc_model) -> dict:
-    """
-    Разобрать схему входов MLflow pyfunc-модели на обязательные/опциональные.
-    """
     schema = pyfunc_model.metadata.get_input_schema()
     features_all, features_required, features_optional = [], [], []
     if schema:
@@ -64,9 +53,6 @@ def _parse_schema(pyfunc_model) -> dict:
 
 
 def _compute_engineered(df: pd.DataFrame, target_cols: List[str]) -> pd.DataFrame:
-    """
-    Посчитать производные признаки, если можем (year/month/dayofweek, лаги и rolling).
-    """
     # даты
     if "date" in df.columns:
         dt = pd.to_datetime(df["date"], errors="coerce")
@@ -96,16 +82,14 @@ def _compute_engineered(df: pd.DataFrame, target_cols: List[str]) -> pd.DataFram
         if "gold_close_lag1" in target_cols and "gold_close_lag1" not in df.columns:
             df["gold_close_lag1"] = df["gold close"].shift(1)
 
-    # добивка пропусков от лагов/роллингов
     df = df.ffill().bfill()
     return df
 
 
-# ========= 1) Lifespan (стартап/шатаун) =========
+# ========= 1. Lifespan =========
 @asynccontextmanager
 async def lifespan(app: fastapi.FastAPI):
-    # Загрузка модели при старте
-    print("--- Startup: loading MLflow model ---")
+    print("--- Startup: loading model ---")
     try:
         model = mlflow.pyfunc.load_model(MODEL_URI)
         parsed = _parse_schema(model)
@@ -114,108 +98,53 @@ async def lifespan(app: fastapi.FastAPI):
         ml_models["features_required"] = parsed["required"]
         ml_models["features_optional"] = parsed["optional"]
         ml_models["startup_error"] = None
-
-        print(
-            f"Model loaded OK from {MODEL_URI}. "
-            f"features: {len(parsed['all'])}, "
-            f"required: {len(parsed['required'])}, "
-            f"optional: {len(parsed['optional'])}"
-        )
+        print(f"Model loaded OK. {len(parsed['all'])} features")
     except Exception:
         err = traceback.format_exc()
         ml_models["startup_error"] = err
-        print("CRITICAL: model load failed:\n", err)
+        print("CRITICAL: failed to load model:\n", err)
 
     yield
-
-    # Очистка при остановке
     ml_models.clear()
-    print("--- Shutdown: cleared in-memory model ---")
+    print("--- Shutdown: cleared ---")
 
 
-# ========= 2) Приложение =========
+# ========= 2. App =========
 app = fastapi.FastAPI(
     title="API для предсказания цены золота",
-    docs_url="/docs",
-    openapi_url="/openapi.json",
+    docs_url=None,          # docs и openapi подключаем вручную
+    redoc_url=None,
+    openapi_url=None,
     lifespan=lifespan,
 )
 
-# CORS по желанию (можно ограничить доменами)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
-# Хэндлеры БЕЗ префикса — для kube-проб (идут прямо в pod)
-@app.get("/", tags=["internal"])
-def _root_probe():
-    return {"message": "OK"}
-
-@app.get("/livez", tags=["internal"])
-def _livez():
-    return {"ok": True}
-
-# ========= 3) Роутер С ПРЕФИКСОМ (важно для ALB без rewrite) =========
-router = APIRouter(prefix=API_PREFIX, tags=["gold-api"])
-
-
-@router.get("/")
+# ========= 3. Эндпоинты под префиксом =========
+@app.get(f"{API_PREFIX}/")
 def root():
-    """
-    Информационный корень под префиксом.
-    """
-    return {
-        "message": "Gold-price prediction API",
-        "endpoints": {
-            "healthz": f"{API_PREFIX}/healthz",
-            "schema": f"{API_PREFIX}/schema",
-            "template": f"{API_PREFIX}/template",
-            "predict": f"{API_PREFIX}/predict",
-            "docs": f"{API_PREFIX}/docs",
-            "openapi": f"{API_PREFIX}/openapi.json",
-            "startup-error": f"{API_PREFIX}/debug/startup-error",
-        },
-    }
+    return {"message": "Gold-price prediction API. Use /schema, /template, /predict"}
 
 
-@router.get("/healthz")
+@app.get(f"{API_PREFIX}/healthz")
 def healthz():
-    ok = ml_models.get("model") is not None
-    return {"ok": ok}
+    return {"ok": ml_models.get("model") is not None}
 
 
-@router.get("/debug/startup-error", response_class=PlainTextResponse)
-def startup_error():
-    """
-    Вернуть текст ошибки загрузки модели (если была) для быстрой диагностики.
-    """
-    err = ml_models.get("startup_error")
-    return err or "No startup error."
-
-
-@router.get("/schema")
-def get_schema():
+@app.get(f"{API_PREFIX}/schema")
+def schema():
     if ml_models.get("model") is None:
-        raise HTTPException(status_code=503, detail="Модель не загружена.")
+        raise HTTPException(503, "Модель не загружена.")
     return {
         "features_all": ml_models["features_all"],
         "features_required": ml_models["features_required"],
         "features_optional": ml_models["features_optional"],
-        "note": "Обязательные столбцы должны присутствовать в CSV. Опциональные можно опустить — мы создадим их с NaN.",
     }
 
 
-@router.get("/template")
-def get_template():
-    """
-    Отдаёт CSV-шаблон с правильными колонками (3 пустые строки).
-    """
+@app.get(f"{API_PREFIX}/template")
+def template():
     if ml_models.get("model") is None:
-        raise HTTPException(status_code=503, detail="Модель не загружена.")
-
+        raise HTTPException(503, "Модель не загружена.")
     cols = ml_models["features_all"]
     df = pd.DataFrame(columns=cols, data=[[""] * len(cols) for _ in range(3)])
     buf = io.StringIO()
@@ -228,71 +157,64 @@ def get_template():
     )
 
 
-@router.post("/predict")
+@app.post(f"{API_PREFIX}/predict")
 async def predict(file: UploadFile = File(...)):
-    """
-    Принимает CSV, дополняет вычисляемые признаки при необходимости,
-    валидирует обязательные колонки и делает предсказание.
-    """
     if ml_models.get("model") is None:
-        raise HTTPException(status_code=503, detail="Модель не была загружена при старте сервера.")
-
+        raise HTTPException(503, "Модель не загружена.")
     if not file.filename.endswith(".csv"):
-        raise HTTPException(status_code=400, detail="Неверный формат файла. Требуется .csv")
+        raise HTTPException(400, "Нужен CSV файл.")
 
-    # --- читаем CSV ---
     try:
         raw = await file.read()
         df_in = pd.read_csv(io.StringIO(raw.decode("utf-8")))
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"CSV не читается: {e}")
+        raise HTTPException(400, f"CSV не читается: {e}")
 
-    feats_all: List[str] = ml_models["features_all"]
-    feats_req: List[str] = ml_models["features_required"]
-    feats_opt: List[str] = ml_models["features_optional"]
+    feats_all = ml_models["features_all"]
+    feats_req = ml_models["features_required"]
+    feats_opt = ml_models["features_optional"]
 
-    # 1) вычислим производные, если сможем
-    try:
-        df_in = _compute_engineered(df_in, feats_all)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Ошибка при вычислении производных признаков: {e}")
+    df_in = _compute_engineered(df_in, feats_all)
 
-    # 2) обязательные колонки должны быть
-    missing_required = [c for c in feats_req if c not in df_in.columns]
-    if missing_required:
+    missing = [c for c in feats_req if c not in df_in.columns]
+    if missing:
         raise HTTPException(
-            status_code=400,
-            detail={
-                "error": "Отсутствуют обязательные колонки",
-                "missing_required": missing_required,
-                "hint": f"Скачайте шаблон {API_PREFIX}/template или запросите список {API_PREFIX}/schema",
-            },
+            400,
+            {"error": "Отсутствуют обязательные колонки", "missing_required": missing},
         )
 
-    # 3) создадим опциональные при отсутствии
     for c in feats_opt:
         if c not in df_in.columns:
             df_in[c] = np.nan
 
-    # 4) упорядочим колонки
     final_df = df_in.reindex(columns=feats_all)
 
-    # --- инференс ---
     try:
         preds = ml_models["model"].predict(final_df)
     except Exception as e:
-        raise HTTPException(status_code=422, detail=f"Ошибка во время предсказания: {e}")
+        raise HTTPException(422, f"Ошибка предсказания: {e}")
 
     return {"predictions": np.asarray(preds).ravel().tolist()}
 
 
-# Подключаем роутер с префиксом
-app.include_router(router)
+# ========= 4. Swagger и OpenAPI вручную =========
+@app.get(f"{API_PREFIX}/openapi.json", include_in_schema=False)
+def openapi_json():
+    return JSONResponse(
+        get_openapi(title=app.title, version="1.0.0", routes=app.routes)
+    )
 
 
-# ========= 4) Точка входа (локальный запуск) =========
-# uvicorn main:app --host 0.0.0.0 --port 8000 --proxy-headers
+@app.get(f"{API_PREFIX}/docs", include_in_schema=False)
+def swagger_ui():
+    return get_swagger_ui_html(
+        openapi_url=f"{API_PREFIX}/openapi.json",
+        title=f"{app.title} — Docs",
+    )
+
+
+# ========= 5. Локальный запуск =========
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, proxy_headers=True, reload=False)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, proxy_headers=True)
