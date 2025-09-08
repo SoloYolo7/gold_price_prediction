@@ -17,7 +17,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 load_dotenv()
 
 PROJECT_NAME = os.getenv("PROJECT_NAME", "gold-price-prediction")
-API_PREFIX = f"/api-{PROJECT_NAME}"  # внешний префикс за Ingress
+API_PREFIX = f"/api-{PROJECT_NAME}"
 
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://84.201.144.227:8000")
 RUN_ID = os.getenv("MLFLOW_RUN_ID", "82d0a09af0d144f3bdc3f7111ea5b099")
@@ -27,8 +27,8 @@ mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 # ВАЖНО: НЕ ставим префикс в docs/openapi, иначе получится «двойной» путь.
 app = fastapi.FastAPI(
     title="API для предсказания цены золота",
-    docs_url="/docs",
-    openapi_url="/openapi.json",
+    docs_url=f"{API_PREFIX}/docs",   # <-- отдаём Swagger по префиксу
+    openapi_url="/openapi.json",     # <-- а спецификацию без префикса (Swagger сам подставит baseUrl)
 )
 
 app.add_middleware(
