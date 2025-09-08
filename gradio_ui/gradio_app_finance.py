@@ -6,7 +6,7 @@ import requests
 from datetime import datetime
 
 # адрес API берём из окружения
-API_URL = http://api-gold-price-prediction/api-gold-price-prediction/predict
+API_URL = os.getenv("API_URL", "http://api-gold-price-prediction/api-gold-price-prediction/predict")
 REQUEST_TIMEOUT = float(os.getenv("REQUEST_TIMEOUT", "60"))
 
 def _pretty_http_error(resp: requests.Response) -> str:
