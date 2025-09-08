@@ -7,7 +7,7 @@ from datetime import datetime
 
 PROJECT_NAME = os.getenv("PROJECT_NAME", "gold-price-prediction")
 
-# ВНУТРИ кластера ходим БЕЗ префикса:
+# ВНУТРИ кластера идём БЕЗ префикса (иначе 404)
 API_URL = os.getenv("API_URL", f"http://api-{PROJECT_NAME}/predict")
 
 DOMAIN_NAME = os.getenv("DOMAIN_NAME", "")
@@ -39,9 +39,9 @@ def predict_gold_price(uploaded_file):
         data = resp.json()
         predictions = data.get("predictions")
     except requests.exceptions.ConnectionError:
-        raise gr.Error(f"Ошибка подключения к API (внутр.): {API_URL}")
+        raise gr.Error(f"Ошибка подключения к API: {API_URL}")
     except requests.exceptions.Timeout:
-        raise gr.Error(f"Превышено время ожидания API (timeout={REQUEST_TIMEOUT}s).")
+        raise gr.Error(f"Превышено время ожидания (timeout={REQUEST_TIMEOUT}s).")
     except requests.exceptions.HTTPError:
         raise gr.Error(f"API error {resp.status_code}: {_pretty_http_error(resp)}")
     except ValueError:
@@ -105,6 +105,6 @@ with gr.Blocks(theme=gr.themes.Default(), title="Предсказание цен
 if __name__ == "__main__":
     demo.launch(
         server_name="0.0.0.0",
-        server_port=int(os.getenv("PORT", "7861")),   # слушаем 7861 (как в манифесте)
+        server_port=int(os.getenv("PORT", "7861")),      # должен совпадать с k8s
         root_path=os.getenv("ROOT_PATH", f"/ui-{PROJECT_NAME}"),
     )
