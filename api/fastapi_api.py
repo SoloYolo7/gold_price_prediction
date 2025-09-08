@@ -136,8 +136,8 @@ async def lifespan(app: fastapi.FastAPI):
 # ========= 2) Приложение =========
 app = fastapi.FastAPI(
     title="API для предсказания цены золота",
-    docs_url=f"{API_PREFIX}/docs",
-    openapi_url=f"{API_PREFIX}/openapi.json",
+    docs_url="/docs",
+    openapi_url="/openapi.json",
     lifespan=lifespan,
 )
 
