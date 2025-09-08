@@ -18,23 +18,15 @@ spec:
           image: __API__VERSION__
           ports:
             - containerPort: 8000
-          
-          # --- ФИНАЛЬНОЕ РЕШЕНИЕ: STARTUP PROBE + READINESS PROBE ---
 
-          # 1. Проверка Запуска (startupProbe):
-          # Дает поду до 5 минут (30 попыток * 10 секунд) на то, чтобы запуститься
-          # и загрузить модель, прежде чем Kubernetes посчитает его "упавшим".
+          # --- ПРОБЫ ДЛЯ API ---
           startupProbe:
             httpGet:
-              path: /  # Проверяем корневой эндпоинт FastAPI
-              port: 8000 # Порт, на котором работает uvicorn
-            initialDelaySeconds: 30  # Начинаем проверять через 30 секунд
-            periodSeconds: 10      # Проверяем каждые 10 секунд
-            failureThreshold: 30   # 30 неудачных попыток = 300 секунд = 5 минут
-
-          # 2. Проверка Готовности (readinessProbe):
-          # Начнет работать только ПОСЛЕ успешного startupProbe.
-          # Определяет, готов ли под принимать новый трафик.
+              path: /
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 30
           readinessProbe:
             httpGet:
               path: /
@@ -54,10 +46,10 @@ spec:
               value: "ru-central1"
           resources:
             limits:
-              cpu: 1
+              cpu: "1"
               memory: 4Gi
             requests:
-              cpu: 0.5
+              cpu: "0.5"
               memory: 2Gi
 ---
 apiVersion: v1
@@ -72,6 +64,7 @@ spec:
     - name: http
       port: 80
       targetPort: 8000
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -93,18 +86,29 @@ spec:
           ports:
             - containerPort: 7860
           env:
+            # ВАЖНО: путь до API внутри кластера + ПРЕФИКС
             - name: API_URL
-              value: "http://api-gold-price-prediction/api-gold-price-prediction/predict"
+              value: "http://api-__PROJECT_NAME__/api-__PROJECT_NAME__/predict"
             - name: ROOT_PATH
-              value: "/ui-gold-price-prediction"
+              value: "/ui-__PROJECT_NAME__"
             - name: PORT
               value: "7860"
+
+          # --- ПРОБЫ ДЛЯ UI (учитываем root_path) ---
+          readinessProbe:
+            httpGet:
+              path: /ui-__PROJECT_NAME__/
+              port: 7860
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+
           resources:
             limits:
-              cpu: 1
+              cpu: "1"
               memory: 2Gi
             requests:
-              cpu: 0.5
+              cpu: "0.5"
               memory: 1Gi
 ---
 apiVersion: v1
@@ -119,11 +123,13 @@ spec:
     - name: http
       port: 80
       targetPort: 7860
+
+# ================== INGRESS ДЛЯ API ==================
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: alb-__PROJECT_NAME__ 
+  name: alb-__PROJECT_NAME__-api
   annotations:
     ingress.alb.yc.io/subnets: __ALB_INGRESS_SUBNET__
     ingress.alb.yc.io/security-groups: __ALB_INGRESS_SEC_GROUP__
@@ -131,7 +137,8 @@ metadata:
     ingress.alb.yc.io/group-name: __PROJECT_NAME__-ingress-group
     ingress.alb.yc.io/requests-timeout: "300s"
     ingress.alb.yc.io/connect-timeout: "30s"
-
+    # ALB healthcheck конкретно для API
+    ingress.alb.yc.io/healthcheck-path: /api-__PROJECT_NAME__/healthz
 spec:
   tls:
     - hosts:
@@ -148,6 +155,31 @@ spec:
                 name: api-__PROJECT_NAME__
                 port:
                   number: 80
+
+# ================== INGRESS ДЛЯ UI ===================
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: alb-__PROJECT_NAME__-ui
+  annotations:
+    ingress.alb.yc.io/subnets: __ALB_INGRESS_SUBNET__
+    ingress.alb.yc.io/security-groups: __ALB_INGRESS_SEC_GROUP__
+    ingress.alb.yc.io/external-ipv4-address: __ALB_INGRESS_EXT_IP__
+    ingress.alb.yc.io/group-name: __PROJECT_NAME__-ingress-group
+    ingress.alb.yc.io/requests-timeout: "300s"
+    ingress.alb.yc.io/connect-timeout: "30s"
+    # ALB healthcheck для UI должен дергать именно его корень с префиксом
+    ingress.alb.yc.io/healthcheck-path: /ui-__PROJECT_NAME__/
+spec:
+  tls:
+    - hosts:
+        - __DOMAIN_NAME__
+      secretName: yc-certmgr-cert-id-__TLS_ID__
+  rules:
+    - host: __DOMAIN_NAME__
+      http:
+        paths:
           - path: /ui-__PROJECT_NAME__
             pathType: Prefix
             backend:
@@ -155,59 +187,3 @@ spec:
                 name: ui-__PROJECT_NAME__
                 port:
                   number: 80
-
-
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: api-__PROJECT_NAME__
-data:
-  nginx.conf: |
-    worker_processes auto;
-    events {
-    }
-    http {
-      server {
-        listen 80 ;
-        location = /api-__PROJECT_NAME__ {
-          proxy_pass http://api-__PROJECT_NAME__;
-          proxy_set_header Host $host;
-          proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        }
-      }
-    }
-
-
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: ui-__PROJECT_NAME__
-data:
-  nginx.conf: |
-    worker_processes auto;
-    events {
-      worker_connections 1024;
-    }
-    http {
-      include       mime.types;
-      default_type  application/octet-stream;
-      sendfile        on;
-      keepalive_timeout  65;
-      server {
-        listen 80;
-        server_name __DOMAIN_NAME__ www.__DOMAIN_NAME__;
-        location /ui-__PROJECT_NAME__ {
-          proxy_pass http://ui-__PROJECT_NAME__;
-          proxy_http_version 1.1;
-          proxy_set_header Upgrade $http_upgrade;
-          proxy_set_header Connection "upgrade";
-          proxy_set_header Host $host;
-          proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-          proxy_set_header X-Forwarded-Proto $scheme;
-        }
-      }
-    }
